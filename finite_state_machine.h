@@ -6,21 +6,38 @@
 #include <set>
 #include <string>
 
-class State {
-  std::string name_;
-  bool accepting_;
-  bool initial_;
+struct State {
+  State() {}
+
+  State(std::string s) :
+    name(s) {}
+
+  std::string name = "";
+  bool accepting = false;
+  bool initial = false;
 };
 
 template<class T>
 class Edge {
+public:
+  bool operator<(const Edge& other) const {
+    return (end_ < other.end_) || 
+           (end_ == other.end_ && edge_value_ < other.edge_value_);
+  }
+private:
   std::shared_ptr<State> end_;
   std::optional<T> edge_value_;
 };
 
 template<class T>
 class FiniteStateMachine {
-  std::map<State, std::set<Edge<T>>> adjacency_; 
+public:
+  std::shared_ptr<State> AddState(State s);
+
+  std::string Dot() const;
+private:
+  std::map<std::shared_ptr<State>, std::set<Edge<T>>> adjacency_; 
+  std::set<std::shared_ptr<State>> states_;
 };
 
 #include "finite_state_machine_impl.cc"
