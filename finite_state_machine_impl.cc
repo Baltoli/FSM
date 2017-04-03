@@ -28,6 +28,19 @@ Edge<T> FiniteStateMachine<T>::AddEdge(std::shared_ptr<State> begin,
 }
 
 template<class T>
+template<class E>
+bool Edge<T>::Accepts(E val, std::function<bool (E,T)> acceptor) const
+{
+  return edge_value_ && acceptor(val, *edge_value_);
+}
+
+template<class T>
+bool Edge<T>::Accepts(T val) const
+{
+  return edge_value_ && val == *edge_value_;
+}
+
+template<class T>
 bool FiniteStateMachine<T>::IsDeterministic() const {
   return std::all_of(adjacency_.begin(), adjacency_.end(),
     [=](auto adj_list) {
