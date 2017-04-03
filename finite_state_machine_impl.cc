@@ -1,8 +1,8 @@
-#include <iostream>
 #include <sstream>
 
 template<class T>
-std::shared_ptr<State> FiniteStateMachine<T>::AddState(State s) {
+std::shared_ptr<State> FiniteStateMachine<T>::AddState(State s)
+{
   auto pointer = std::shared_ptr<State>{new State{s}};
   states_.insert(pointer);  
   adjacency_[pointer] = {};
@@ -10,18 +10,27 @@ std::shared_ptr<State> FiniteStateMachine<T>::AddState(State s) {
 }
 
 template<class T>
-std::string FiniteStateMachine<T>::Dot() const {
+Edge<T> FiniteStateMachine<T>::AddEdge(std::shared_ptr<State> begin, 
+                                       std::shared_ptr<State> end)
+{
+  auto edge = Edge<T>{end};
+  adjacency_[begin].insert(edge);
+  return edge;
+}
+
+template<class T>
+std::string FiniteStateMachine<T>::Dot() const
+{
   std::stringstream out;
 
   out << "strict digraph {\n";
   for(const auto& adj_list : adjacency_) {
-    out << *adj_list.first;
+    out << "  " << adj_list.first->name << '\n';
+    for(const auto& edge : adj_list.second) {
+      out << "  " << adj_list.first->name << " -> " << edge.End()->name << '\n';
+    }
   }
+  out << "}";
 
   return out.str();
-}
-
-std::ostream& operator<<(std::ostream& stream, const State& state) {
-  stream << state.name;
-  return stream;
 }

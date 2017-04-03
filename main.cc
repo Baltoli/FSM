@@ -1,10 +1,18 @@
+#include <iostream>
+
 #include "finite_state_machine.h"
 
 int main() {
   auto x = State{"jiwefo"};
+  auto y = State{"hello"};
+
   auto f = FiniteStateMachine<int>{};
   
-  f.AddState(x);
+  auto as = f.AddState(x);
+  auto ay = f.AddState(y);
+  f.AddEdge(as, ay);
+
+  std::cout << f.Dot() << '\n';
 
   return 0;
 }

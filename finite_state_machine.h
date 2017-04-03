@@ -20,6 +20,13 @@ struct State {
 template<class T>
 class Edge {
 public:
+  Edge(std::shared_ptr<State> end) :
+    end_(end), edge_value_(std::nullopt) {}
+
+  std::shared_ptr<State> End() const {
+    return end_;
+  }
+
   bool operator<(const Edge& other) const {
     return (end_ < other.end_) || 
            (end_ == other.end_ && edge_value_ < other.edge_value_);
@@ -33,6 +40,7 @@ template<class T>
 class FiniteStateMachine {
 public:
   std::shared_ptr<State> AddState(State s);
+  Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end);
 
   std::string Dot() const;
 private:
