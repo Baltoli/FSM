@@ -13,9 +13,11 @@ int main() {
   
   auto as = f.AddState(x);
   auto ay = f.AddState(y);
-  f.AddEdge(as, ay);
+  f.AddEdge(as, as, 3);
+  f.AddEdge(as, ay, 4);
 
   std::cout << f.Dot() << '\n';
+  std::cout << f.IsDeterministic() << '\n';
 
   return 0;
 }

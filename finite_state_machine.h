@@ -32,6 +32,14 @@ public:
     return end_;
   }
 
+  bool IsEpsilon() const {
+    return !edge_value_;
+  }
+
+  std::optional<T> Value() const {
+    return edge_value_;
+  }
+
   bool operator<(const Edge& other) const {
     return (end_ < other.end_) || 
            (end_ == other.end_ && edge_value_ < other.edge_value_);
@@ -49,6 +57,8 @@ public:
   std::shared_ptr<State> AddState(State s);
   Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end);
   Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end, T val);
+
+  bool IsDeterministic() const;
 
   std::string Dot() const;
 private:
