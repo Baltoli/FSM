@@ -28,3 +28,9 @@ std::string Edge<T>::Dot() const {
 
   return out.str();
 }
+
+template<class T>
+bool Edge<T>::operator<(const Edge& other) const {
+  return (end_ < other.end_) || 
+         (end_ == other.end_ && edge_value_ < other.edge_value_);
+}

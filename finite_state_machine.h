@@ -17,6 +17,8 @@ public:
 
   bool IsDeterministic() const;
 
+  std::set<std::shared_ptr<State>> EpsilonClosure(std::shared_ptr<State> state);
+
   std::string Dot() const;
 private:
   std::map<std::shared_ptr<State>, std::set<Edge<T>>> adjacency_; 

@@ -1,3 +1,4 @@
+#include <queue>
 #include <sstream>
 
 template<class T>
@@ -56,6 +57,37 @@ bool FiniteStateMachine<T>::IsDeterministic() const {
       return epsilon_free && unique;
     }
   );
+}
+
+template<class T>
+std::set<std::shared_ptr<State>>
+  FiniteStateMachine<T>::EpsilonClosure(std::shared_ptr<State> state)
+{
+  auto ret = std::set<std::shared_ptr<State>>{ state };
+  auto visited = decltype(ret){};
+
+  auto work_queue = std::queue<std::shared_ptr<State>>{};
+  work_queue.push(state);
+
+  while(!work_queue.empty()) {
+    auto next = work_queue.front();
+    work_queue.pop();
+
+    if(visited.find(next) != visited.end()) {
+      continue;
+    } else {
+      visited.insert(next);
+    }
+
+    for(const auto& edge : adjacency_[next]) {
+      if(edge.IsEpsilon()) {
+        ret.insert(edge.End());
+        work_queue.push(edge.End());
+      }
+    }
+  }
+
+  return ret;
 }
 
 template<class T>
