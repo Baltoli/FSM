@@ -99,6 +99,7 @@ FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree()
   for(const auto& adj_list : adjacency_) {
     const auto& state = adj_list.first;
     auto combined = State::Combined(EpsilonClosure(state));
+    combined.initial = state->initial;
 
     auto added = eps_free.AddState(combined);
     closure_map[state] = added;
@@ -106,9 +107,12 @@ FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree()
 
   for(const auto& adj_list : adjacency_) {
     const auto& state = adj_list.first;
-    for(const auto& edge : adj_list.second) {
-      if(!edge.IsEpsilon()) {
-        eps_free.AddEdge(closure_map[state], closure_map[edge.End()], *edge.Value());
+
+    for(const auto& member : EpsilonClosure(state)) {
+      for(const auto& edge : adjacency_[member]) {
+        if(!edge.IsEpsilon()) {
+          eps_free.AddEdge(closure_map[state], closure_map[edge.End()], *edge.Value());
+        }
       }
     }
   }

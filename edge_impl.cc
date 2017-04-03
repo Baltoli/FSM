@@ -18,7 +18,7 @@ std::string Edge<T>::Dot() const {
   std::stringstream out;
 
   out << "\"" << end_->name << "\"";
-  out << "[label=\"  ";
+  out << " [label=\"  ";
   if(edge_value_) {
     out << *edge_value_;
   } else {
