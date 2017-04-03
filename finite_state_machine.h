@@ -24,6 +24,12 @@ public:
   FiniteStateMachine<T> EpsilonFree();
   FiniteStateMachine<T> Deterministic();
 
+  template<class Iterator>
+  bool AcceptsSequence(Iterator begin, Iterator end);
+
+  template<class Iterator, class E>
+  bool AcceptsSequence(Iterator begin, Iterator end, std::function<bool (E,T)> acc);
+
   std::string Dot() const;
 private:
   std::map<std::shared_ptr<State>, std::set<Edge<T>>> adjacency_; 

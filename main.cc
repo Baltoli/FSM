@@ -34,5 +34,11 @@ int main() {
   std::cout << f.Dot() << '\n';
   std::cout << f.Deterministic().Dot() << '\n';
 
+  auto vs = std::vector<int>{0, 0, 1, 1};
+  std::cout << "Accepts: " 
+    << f.Deterministic().AcceptsSequence<typename decltype(vs)::iterator, int>(vs.begin(), vs.end(), 
+                                              [=](auto e, auto t) { return e == t; })
+    << '\n';
+
   return 0;
 }
