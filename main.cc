@@ -32,7 +32,7 @@ int main() {
   f.AddEdge(q4a, q3a, 0);
   
   std::cout << f.Dot() << '\n';
-  std::cout << f.EpsilonFree().Dot() << '\n';
+  std::cout << f.Deterministic().Dot() << '\n';
 
   return 0;
 }

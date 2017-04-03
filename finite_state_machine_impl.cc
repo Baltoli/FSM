@@ -1,3 +1,4 @@
+#include <cassert>
 #include <queue>
 #include <sstream>
 
@@ -26,6 +27,19 @@ Edge<T> FiniteStateMachine<T>::AddEdge(std::shared_ptr<State> begin,
   auto edge = Edge<T>{end, val};
   adjacency_[begin].insert(edge);
   return edge;
+}
+
+template<class T>
+std::shared_ptr<State> FiniteStateMachine<T>::InitialState() const
+{
+  auto found = std::find_if(adjacency_.begin(), adjacency_.end(),
+    [=](auto p) { 
+      return p.first->initial; 
+    }
+  );
+
+  assert(found != adjacency_.end());
+  return found->first;
 }
 
 template<class T>
@@ -118,6 +132,57 @@ FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree()
   }
 
   return eps_free;
+}
+
+template<class T>
+FiniteStateMachine<T> FiniteStateMachine<T>::Deterministic() {
+  auto eps_free = EpsilonFree();
+  auto dfa = FiniteStateMachine<T>{};
+
+  auto initial_state = eps_free.InitialState();
+  auto work_queue = std::queue<std::set<std::shared_ptr<State>>>{};
+  work_queue.push({initial_state});
+
+  auto combined = std::map<std::set<std::shared_ptr<State>>, std::shared_ptr<State>>{};
+  auto visited = std::set<std::set<std::shared_ptr<State>>>{};
+
+  while(!work_queue.empty()) {
+    auto next = work_queue.front();
+    work_queue.pop();
+
+    if(visited.find(next) == visited.end()) {
+      visited.insert(next);
+    } else {
+      continue;
+    }
+
+    if(combined.find(next) == combined.end()) {
+      auto cs = State::Combined(next);
+      auto csa = dfa.AddState(cs);
+      combined[next] = csa;
+    }
+
+    auto reachable = std::map<T, std::set<std::shared_ptr<State>>>{};
+    for(const auto& state : next) {
+      for(const auto& edge : eps_free.adjacency_[state]) {
+        reachable[*edge.Value()].insert(edge.End());
+      }
+    }
+
+    for(const auto& reach_pair : reachable) {
+      work_queue.push(reach_pair.second);
+
+      if(combined.find(reach_pair.second) == combined.end()) {
+        auto cs = State::Combined(reach_pair.second);
+        auto csa = dfa.AddState(cs);
+        combined[reach_pair.second] = csa;
+      }
+
+      dfa.AddEdge(combined[next], combined[reach_pair.second], reach_pair.first);
+    }
+  }
+
+  return dfa;
 }
 
 template<class T>

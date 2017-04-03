@@ -15,11 +15,14 @@ public:
   Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end);
   Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end, T val);
 
+  std::shared_ptr<State> InitialState() const;
+
   bool IsDeterministic() const;
 
   std::set<std::shared_ptr<State>> EpsilonClosure(std::shared_ptr<State> state);
 
   FiniteStateMachine<T> EpsilonFree();
+  FiniteStateMachine<T> Deterministic();
 
   std::string Dot() const;
 private:
