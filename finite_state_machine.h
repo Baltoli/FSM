@@ -36,6 +36,8 @@ public:
     return (end_ < other.end_) || 
            (end_ == other.end_ && edge_value_ < other.edge_value_);
   }
+
+  std::string Dot() const;
 private:
   std::shared_ptr<State> end_;
   std::optional<T> edge_value_;
@@ -46,6 +48,7 @@ class FiniteStateMachine {
 public:
   std::shared_ptr<State> AddState(State s);
   Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end);
+  Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end, T val);
 
   std::string Dot() const;
 private:

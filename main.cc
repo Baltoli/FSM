@@ -13,7 +13,7 @@ int main() {
   
   auto as = f.AddState(x);
   auto ay = f.AddState(y);
-  f.AddEdge(as, ay);
+  f.AddEdge(as, ay, 4);
 
   std::cout << f.Dot() << '\n';
 
