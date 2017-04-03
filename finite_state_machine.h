@@ -19,7 +19,7 @@ public:
 
   std::set<std::shared_ptr<State>> EpsilonClosure(std::shared_ptr<State> state);
 
-  FiniteStateMachine<T> EpsilonFree() const;
+  FiniteStateMachine<T> EpsilonFree();
 
   std::string Dot() const;
 private:

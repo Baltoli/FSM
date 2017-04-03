@@ -20,10 +20,8 @@ int main() {
   auto e2 = f.AddEdge(as, ay, 4);
   f.AddEdge(ay, az);
 
-  auto c = State::Combined({as, ay, az});
-  std::cout << c.Dot() << '\n';
-
   std::cout << f.Dot() << '\n';
+  std::cout << f.EpsilonFree().Dot() << '\n';
 
   std::cout << "Epsilon for " << as->name << '\n';
   for(const auto& eps : f.EpsilonClosure(as)) {

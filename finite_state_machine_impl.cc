@@ -91,9 +91,29 @@ std::set<std::shared_ptr<State>>
 }
 
 template<class T>
-FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree() const
+FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree()
 {
-  return *this;
+  auto closure_map = std::map<std::shared_ptr<State>, std::shared_ptr<State>>{};
+  auto eps_free = FiniteStateMachine<T>{};
+
+  for(const auto& adj_list : adjacency_) {
+    const auto& state = adj_list.first;
+    auto combined = State::Combined(EpsilonClosure(state));
+
+    auto added = eps_free.AddState(combined);
+    closure_map[state] = added;
+  }
+
+  for(const auto& adj_list : adjacency_) {
+    const auto& state = adj_list.first;
+    for(const auto& edge : adj_list.second) {
+      if(!edge.IsEpsilon()) {
+        eps_free.AddEdge(closure_map[state], closure_map[edge.End()], *edge.Value());
+      }
+    }
+  }
+
+  return eps_free;
 }
 
 template<class T>
