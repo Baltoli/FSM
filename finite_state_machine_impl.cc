@@ -24,13 +24,31 @@ std::string FiniteStateMachine<T>::Dot() const
   std::stringstream out;
 
   out << "strict digraph {\n";
+  out << "  node[shape=circle]\n";
   for(const auto& adj_list : adjacency_) {
-    out << "  " << adj_list.first->name << '\n';
+    out << "  " << adj_list.first->Dot() << '\n';
     for(const auto& edge : adj_list.second) {
       out << "  " << adj_list.first->name << " -> " << edge.End()->name << '\n';
     }
   }
   out << "}";
+
+  return out.str();
+}
+
+std::string State::Dot() const
+{
+  std::stringstream out;
+
+  out << name;
+
+  if(accepting) {
+    out << "[shape=doublecircle]";
+  }
+
+  if(initial) {
+    out << ";secret [style=invis,shape=point];secret->" << name;
+  }
 
   return out.str();
 }

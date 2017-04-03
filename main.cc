@@ -4,7 +4,10 @@
 
 int main() {
   auto x = State{"jiwefo"};
+  x.initial = true;
+
   auto y = State{"hello"};
+  y.accepting = true;
 
   auto f = FiniteStateMachine<int>{};
   

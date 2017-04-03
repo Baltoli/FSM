@@ -15,6 +15,8 @@ struct State {
   std::string name = "";
   bool accepting = false;
   bool initial = false;
+
+  std::string Dot() const;
 };
 
 template<class T>
@@ -22,6 +24,9 @@ class Edge {
 public:
   Edge(std::shared_ptr<State> end) :
     end_(end), edge_value_(std::nullopt) {}
+
+  Edge(std::shared_ptr<State> end, T val) :
+    end_(end), edge_value_(val) {}
 
   std::shared_ptr<State> End() const {
     return end_;
