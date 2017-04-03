@@ -17,7 +17,7 @@ template<class T>
 std::string Edge<T>::Dot() const {
   std::stringstream out;
 
-  out << end_->name;
+  out << "\"" << end_->name << "\"";
   out << "[label=\"  ";
   if(edge_value_) {
     out << *edge_value_;

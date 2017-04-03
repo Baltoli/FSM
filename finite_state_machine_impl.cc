@@ -91,6 +91,12 @@ std::set<std::shared_ptr<State>>
 }
 
 template<class T>
+FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree() const
+{
+  return *this;
+}
+
+template<class T>
 std::string FiniteStateMachine<T>::Dot() const
 {
   std::stringstream out;
@@ -101,7 +107,7 @@ std::string FiniteStateMachine<T>::Dot() const
   for(const auto& adj_list : adjacency_) {
     out << "  " << adj_list.first->Dot() << '\n';
     for(const auto& edge : adj_list.second) {
-      out << "  " << adj_list.first->name << " -> " << edge.Dot() << '\n';
+      out << "  \"" << adj_list.first->name << "\" -> " << edge.Dot() << "\n";
     }
   }
   out << "}";
