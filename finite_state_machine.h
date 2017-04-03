@@ -2,59 +2,11 @@
 #define FINITE_STATE_MACHINE_H
 
 #include <map>
-#include <optional>
 #include <set>
 #include <string>
 
-struct State {
-  State() {}
-
-  State(std::string s) :
-    name(s) {}
-
-  std::string name = "";
-  bool accepting = false;
-  bool initial = false;
-
-  std::string Dot() const;
-};
-
-template<class T>
-class Edge {
-public:
-  Edge(std::shared_ptr<State> end) :
-    end_(end), edge_value_(std::nullopt) {}
-
-  Edge(std::shared_ptr<State> end, T val) :
-    end_(end), edge_value_(val) {}
-
-  std::shared_ptr<State> End() const {
-    return end_;
-  }
-
-  template<class E>
-  bool Accepts(E val, std::function<bool (E,T)>) const;
-
-  bool Accepts(T val) const;
-
-  bool IsEpsilon() const {
-    return !edge_value_;
-  }
-
-  std::optional<T> Value() const {
-    return edge_value_;
-  }
-
-  bool operator<(const Edge& other) const {
-    return (end_ < other.end_) || 
-           (end_ == other.end_ && edge_value_ < other.edge_value_);
-  }
-
-  std::string Dot() const;
-private:
-  std::shared_ptr<State> end_;
-  std::optional<T> edge_value_;
-};
+#include "edge.h"
+#include "state.h"
 
 template<class T>
 class FiniteStateMachine {
