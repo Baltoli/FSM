@@ -3,7 +3,6 @@
 
 #include <cassert>
 #include <map>
-#include <optional>
 #include <queue>
 #include <set>
 #include <sstream>
@@ -32,17 +31,17 @@ template<class T>
 class Edge {
 public:
   Edge(std::shared_ptr<State> end) :
-    end_(end), edge_value_(std::nullopt) {}
+    end_(end), edge_value_(nullptr) {}
 
   Edge(std::shared_ptr<State> end, T val) :
-    end_(end), edge_value_(val) {}
+    end_(end), edge_value_(new T{val}) {}
 
   template<class E>
   bool Accepts(E val, std::function<bool (E,T)>) const;
 
   bool IsEpsilon() const { return !edge_value_; }
 
-  std::optional<T> Value() const { return edge_value_; }
+  const T& Value() const { return *edge_value_; }
   std::shared_ptr<State> End() const { return end_; }
 
   bool operator<(const Edge& other) const;
@@ -50,7 +49,7 @@ public:
   std::string Dot() const;
 private:
   std::shared_ptr<State> end_;
-  std::optional<T> edge_value_;
+  std::shared_ptr<T> edge_value_;
 };
 
 template<class T>
@@ -142,9 +141,9 @@ bool FiniteStateMachine<T>::IsDeterministic() const {
           continue;
         }
 
-        auto found = edges.find(*edge.Value());
+        auto found = edges.find(edge.Value());
         if(found == edges.end()) {
-          edges.insert(*edge.Value());
+          edges.insert(edge.Value());
         } else {
           unique = false;
           break;
@@ -208,7 +207,7 @@ FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree()
     for(const auto& member : EpsilonClosure(state)) {
       for(const auto& edge : adjacency_[member]) {
         if(!edge.IsEpsilon()) {
-          eps_free.AddEdge(closure_map[state], closure_map[edge.End()], *edge.Value());
+          eps_free.AddEdge(closure_map[state], closure_map[edge.End()], edge.Value());
         }
       }
     }
@@ -249,7 +248,7 @@ FiniteStateMachine<T> FiniteStateMachine<T>::Deterministic()
     auto reachable = std::map<T, std::set<std::shared_ptr<State>>>{};
     for(const auto& state : next) {
       for(const auto& edge : eps_free.adjacency_[state]) {
-        reachable[*edge.Value()].insert(edge.End());
+        reachable[edge.Value()].insert(edge.End());
       }
     }
 

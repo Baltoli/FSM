@@ -35,7 +35,7 @@ int main() {
   std::cout << f.Dot() << '\n';
   std::cout << f.Deterministic().Dot() << '\n';
 
-  auto vs = std::vector<int>{0, 0, 0, 0, 1, 0};
+  auto vs = std::vector<int>{0, 0, 1, 0, 1, 0};
   std::cout << "Accepts: " 
     << f.AcceptsSequence(vs.begin(), vs.end()) << '\n';
 
