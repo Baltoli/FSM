@@ -284,7 +284,8 @@ template<class Iterator, class E>
 bool FiniteStateMachine<T>::AcceptsSequence(Iterator begin, Iterator end, 
                                             std::function<bool (E,T)> acc)
 {
-  static_assert(std::is_same<typename std::iterator_traits<Iterator>::value_type, E>::value);
+  static_assert(std::is_same<typename std::iterator_traits<Iterator>::value_type, E>::value,
+                "Wrong iterator type used for acceptance check");
 
   auto fsm = (IsDeterministic() ? *this : Deterministic());
 
