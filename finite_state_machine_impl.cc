@@ -190,24 +190,11 @@ template<class T>
 template<class Iterator>
 bool FiniteStateMachine<T>::AcceptsSequence(Iterator begin, Iterator end)
 {
-  static_assert(std::is_same<typename std::iterator_traits<Iterator>::value_type, T>::value);
-
-  auto state = InitialState();
-  for(auto it = begin; it != end; it++) {
-    auto accepting_edge = std::find_if(adjacency_[state].begin(), adjacency_[state].end(),
-      [=](Edge<T> edge) {
-        return edge.Accepts(*it);
-      }
-    );
-
-    if(accepting_edge == adjacency_[state].end()) {
-      return false;
-    } else {
-      state = accepting_edge->End();
+  return AcceptsSequence<Iterator, T>(begin, end, 
+    [=](auto t1, auto t2) {
+      return t1 == t2;
     }
-  }
-
-  return true;
+  );
 }
 
 template<class T>
@@ -217,22 +204,24 @@ bool FiniteStateMachine<T>::AcceptsSequence(Iterator begin, Iterator end,
 {
   static_assert(std::is_same<typename std::iterator_traits<Iterator>::value_type, E>::value);
 
-  auto state = InitialState();
+  auto fsm = (IsDeterministic() ? *this : Deterministic());
+
+  auto state = fsm.InitialState();
   for(auto it = begin; it != end; it++) {
-    auto accepting_edge = std::find_if(adjacency_[state].begin(), adjacency_[state].end(),
+    auto accepting_edge = std::find_if(fsm.adjacency_[state].begin(), fsm.adjacency_[state].end(),
       [=](Edge<T> edge) {
         return edge.Accepts(*it, acc);
       }
     );
 
-    if(accepting_edge == adjacency_[state].end()) {
+    if(accepting_edge == fsm.adjacency_[state].end()) {
       return false;
     } else {
       state = accepting_edge->End();
     }
   }
 
-  return true;
+  return state->accepting;
 }
 
 template<class T>

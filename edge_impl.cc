@@ -8,12 +8,6 @@ bool Edge<T>::Accepts(E val, std::function<bool (E,T)> acceptor) const
 }
 
 template<class T>
-bool Edge<T>::Accepts(T val) const
-{
-  return edge_value_ && val == *edge_value_;
-}
-
-template<class T>
 std::string Edge<T>::Dot() const {
   std::stringstream out;
 

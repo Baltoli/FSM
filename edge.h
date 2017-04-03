@@ -17,7 +17,6 @@ public:
 
   template<class E>
   bool Accepts(E val, std::function<bool (E,T)>) const;
-  bool Accepts(T val) const;
 
   bool IsEpsilon() const { return !edge_value_; }
 
