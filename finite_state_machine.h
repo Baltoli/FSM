@@ -109,7 +109,11 @@ FiniteStateMachine<T>::FiniteStateMachine(const FiniteStateMachine<T>& other)
 
   for(const auto& adj_list : other.adjacency_) {
     for(const auto& edge : adj_list.second) {
-      AddEdge(cache[adj_list.first], cache[edge.End()], edge.Value());
+      if(edge.IsEpsilon()) {
+        AddEdge(cache[adj_list.first], cache[edge.End()]);
+      } else {
+        AddEdge(cache[adj_list.first], cache[edge.End()], edge.Value());
+      }
     }
   }
 }
