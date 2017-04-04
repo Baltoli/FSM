@@ -330,7 +330,7 @@ std::string FiniteStateMachine<T>::Dot() const
  * State Implementation
  */
 
-std::string State::Dot() const
+inline std::string State::Dot() const
 {
   std::stringstream out;
 
@@ -347,7 +347,7 @@ std::string State::Dot() const
   return out.str();
 }
 
-State State::Combined(std::set<std::shared_ptr<State>> states) 
+inline State State::Combined(std::set<std::shared_ptr<State>> states) 
 {
   auto state = State{};
 
