@@ -75,6 +75,7 @@ public:
 
   FiniteStateMachine<T> EpsilonFree();
   FiniteStateMachine<T> Deterministic();
+  FiniteStateMachine<T> Relabeled();
 
   template<class Iterator>
   bool AcceptsSequence(Iterator begin, Iterator end);
@@ -342,6 +343,19 @@ FiniteStateMachine<T> FiniteStateMachine<T>::Deterministic()
   }
 
   return dfa;
+}
+
+template<class T>
+FiniteStateMachine<T> FiniteStateMachine<T>::Relabeled()
+{
+  auto new_fsm = *this;
+  int label = 0;
+
+  for(const auto& adj_list : new_fsm.adjacency_) {
+     adj_list.first->name = "s" + std::to_string(label++);
+  }
+
+  return new_fsm;
 }
 
 template<class T>

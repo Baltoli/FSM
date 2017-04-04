@@ -34,6 +34,7 @@ int main() {
   
   std::cout << f.Dot() << '\n';
   std::cout << f.Deterministic().Dot() << '\n';
+  std::cout << f.Deterministic().Relabeled().Dot() << '\n';
   std::cout << "Single Accept (NFA): " << f.HasSingleAccept() << '\n';
   std::cout << "Single Accept (DFA): " << f.Deterministic().HasSingleAccept() << '\n';
 
