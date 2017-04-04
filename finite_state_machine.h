@@ -386,7 +386,7 @@ std::string FiniteStateMachine<T>::Dot() const
 
   out << "digraph {\n";
   out << "  node[shape=circle]\n";
-  out << "  graph[rankdir=LR]\n";
+  out << "  graph[charset=utf8,rankdir=LR]\n";
   for(const auto& adj_list : adjacency_) {
     out << "  " << adj_list.first->Dot() << '\n';
     for(const auto& edge : adj_list.second) {
@@ -468,7 +468,7 @@ std::string Edge<T>::Dot() const {
   if(edge_value_) {
     out << *edge_value_;
   } else {
-    out << "ε";
+    out << "&#949;";
   }
   out << "\"]";
 
