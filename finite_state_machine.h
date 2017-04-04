@@ -63,6 +63,7 @@ public:
   std::shared_ptr<State> AddState(State s);
   Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end);
   Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end, T val);
+  FiniteStateMachine<T>& AddSubMachine(FiniteStateMachine<T>& other);
 
   std::shared_ptr<State> InitialState() const;
 
@@ -145,6 +146,17 @@ Edge<T> FiniteStateMachine<T>::AddEdge(std::shared_ptr<State> begin,
   auto edge = Edge<T>{end, val};
   adjacency_[begin].insert(edge);
   return edge;
+}
+
+template<class T>
+FiniteStateMachine<T>& FiniteStateMachine<T>::AddSubMachine(FiniteStateMachine<T>& other)
+{
+  for(const auto& adj_list : other.adjacency_) {
+    adj_list.first->initial = false;
+    adjacency_[adj_list.first] = adj_list.second;
+  }
+
+  return other;
 }
 
 template<class T>
