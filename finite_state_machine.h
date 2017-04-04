@@ -55,6 +55,11 @@ private:
 template<class T>
 class FiniteStateMachine {
 public:
+  FiniteStateMachine() {}
+
+  FiniteStateMachine(const FiniteStateMachine<T>& other);
+  FiniteStateMachine<T>& operator=(const FiniteStateMachine<T> other);
+
   std::shared_ptr<State> AddState(State s);
   Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end);
   Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end, T val);
@@ -79,18 +84,47 @@ public:
   std::string Dot() const;
 private:
   std::map<std::shared_ptr<State>, std::set<Edge<T>>> adjacency_; 
-  std::set<std::shared_ptr<State>> states_;
 };
 
 /**
  * FiniteStateMachine Implementation
  */
 
+// "Law of the big two" rather than the rule of three applies here because the
+// only resources the class manages are smart pointers. The reason we want to
+// implement the copy constructor and copy assignment operator is that the
+// shared_ptrs that an instance manages are *internal* only (to copy a machine,
+// we want to copy the pointed-to states).
+template<class T>
+FiniteStateMachine<T>::FiniteStateMachine(const FiniteStateMachine<T>& other)
+{
+  auto cache = std::map<std::shared_ptr<State>, std::shared_ptr<State>>{};
+
+  for(const auto& adj_list : other.adjacency_) {
+    if(cache.find(adj_list.first) == cache.end()) {
+      cache[adj_list.first] = AddState(*adj_list.first);
+    }
+  }
+
+  for(const auto& adj_list : other.adjacency_) {
+    for(const auto& edge : adj_list.second) {
+      AddEdge(cache[adj_list.first], cache[edge.End()], edge.Value());
+    }
+  }
+}
+
+template<class T>
+FiniteStateMachine<T>& 
+  FiniteStateMachine<T>::operator=(const FiniteStateMachine<T> other)
+{
+  std::swap(*this, other);
+  return *this;
+}
+
 template<class T>
 std::shared_ptr<State> FiniteStateMachine<T>::AddState(State s)
 {
   auto pointer = std::shared_ptr<State>{new State{s}};
-  states_.insert(pointer);  
   adjacency_[pointer] = {};
   return pointer;
 }
