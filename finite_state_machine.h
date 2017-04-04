@@ -409,7 +409,7 @@ inline std::string State::Dot() const
   out << "\"" << name << "\"";
 
   if(accepting) {
-    out << "[shape=doublecircle]";
+    out << " [shape=doublecircle]";
   }
 
   if(initial) {
