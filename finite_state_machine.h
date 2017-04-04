@@ -152,7 +152,6 @@ template<class T>
 FiniteStateMachine<T>& FiniteStateMachine<T>::AddSubMachine(FiniteStateMachine<T>& other)
 {
   for(const auto& adj_list : other.adjacency_) {
-    adj_list.first->initial = false;
     adjacency_[adj_list.first] = adj_list.second;
   }
 
