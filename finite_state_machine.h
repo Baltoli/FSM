@@ -62,8 +62,10 @@ public:
   std::shared_ptr<State> InitialState() const;
 
   bool IsDeterministic() const;
+  bool HasSingleAccept() const;
 
   std::set<std::shared_ptr<State>> EpsilonClosure(std::shared_ptr<State> state);
+  std::set<std::shared_ptr<State>> AcceptingStates();
 
   FiniteStateMachine<T> EpsilonFree();
   FiniteStateMachine<T> Deterministic();
@@ -125,7 +127,8 @@ std::shared_ptr<State> FiniteStateMachine<T>::InitialState() const
 }
 
 template<class T>
-bool FiniteStateMachine<T>::IsDeterministic() const {
+bool FiniteStateMachine<T>::IsDeterministic() const
+{
   return std::all_of(adjacency_.begin(), adjacency_.end(),
     [=](auto adj_list) {
       auto epsilon_free = std::all_of(adj_list.second.begin(), adj_list.second.end(),
@@ -156,6 +159,16 @@ bool FiniteStateMachine<T>::IsDeterministic() const {
 }
 
 template<class T>
+bool FiniteStateMachine<T>::HasSingleAccept() const
+{
+  return std::count_if(adjacency_.begin(), adjacency_.end(),
+    [=](auto adj_list) {
+      return adj_list.first->accepting;
+    }
+  ) == 1;
+}
+
+template<class T>
 std::set<std::shared_ptr<State>>
   FiniteStateMachine<T>::EpsilonClosure(std::shared_ptr<State> state)
 {
@@ -180,6 +193,20 @@ std::set<std::shared_ptr<State>>
         ret.insert(edge.End());
         work_queue.push(edge.End());
       }
+    }
+  }
+
+  return ret;
+}
+
+template<class T>
+std::set<std::shared_ptr<State>> FiniteStateMachine<T>::AcceptingStates()
+{
+  auto ret = std::set<std::shared_ptr<State>>{};
+
+  for(const auto& adj_list : adjacency_) {
+    if(adj_list.first->accepting) {
+      ret.insert(adj_list.first);
     }
   }
 

@@ -34,6 +34,8 @@ int main() {
   
   std::cout << f.Dot() << '\n';
   std::cout << f.Deterministic().Dot() << '\n';
+  std::cout << "Single Accept (NFA): " << f.HasSingleAccept() << '\n';
+  std::cout << "Single Accept (DFA): " << f.Deterministic().HasSingleAccept() << '\n';
 
   auto vs = std::vector<int>{0, 0, 1, 0, 1, 0};
   std::cout << "Accepts: " 
