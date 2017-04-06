@@ -40,8 +40,7 @@ public:
   bool Accepts(E val, std::function<bool (E,T)>) const;
 
   template<class E, class O>
-  O Transduce(E val, O zero, std::function<bool (E,T)> accept, 
-              std::function<O (E,T)> output) const;
+  O Transduce(E val, std::function<O (E,T)> output) const;
 
   bool IsEpsilon() const { return !edge_value_; }
 
@@ -86,6 +85,10 @@ public:
 
   template<class Iterator, class E>
   bool AcceptsSequence(Iterator begin, Iterator end, std::function<bool (E,T)> acc);
+
+  template<class Iterator, class O>
+  std::vector<O> TransduceSequence(Iterator begin, Iterator end,
+                                   std::function<O (T)> output);
 
   template<class Iterator, class E, class O>
   std::vector<O> TransduceSequence(Iterator begin, Iterator end,
@@ -407,6 +410,17 @@ bool FiniteStateMachine<T>::AcceptsSequence(Iterator begin, Iterator end,
 }
 
 template<class T>
+template<class Iterator, class O>
+std::vector<O> FiniteStateMachine<T>::TransduceSequence(Iterator begin, Iterator end,
+                                                        std::function<O (T)> output)
+{
+  return TransduceSequence<Iterator, T, O>(begin, end, 
+    [](auto e, auto t) { return e == t; },
+    [output](auto e, auto t) { return output(t); }
+  );
+}
+
+template<class T>
 template<class Iterator, class E, class O>
 std::vector<O> FiniteStateMachine<T>::TransduceSequence(Iterator begin, Iterator end,
                                                         std::function<bool (E,T)> acc, 
@@ -414,7 +428,31 @@ std::vector<O> FiniteStateMachine<T>::TransduceSequence(Iterator begin, Iterator
 {
   static_assert(std::is_same<typename std::iterator_traits<Iterator>::value_type, E>::value,
                 "Wrong iterator type used in transducer");
-  return {};
+
+  auto fsm = (IsDeterministic() ? *this : Deterministic());
+  auto transduced_sequence = std::vector<O>{};
+
+  auto state = fsm.InitialState();
+  for(auto it = begin; it != end; it++) {
+    auto accepting_edge = std::find_if(fsm.adjacency_[state].begin(), fsm.adjacency_[state].end(),
+      [=](Edge<T> edge) {
+        return edge.Accepts(*it, acc);
+      }
+    );
+
+    if(accepting_edge == fsm.adjacency_[state].end()) {
+      return {};
+    } else {
+      transduced_sequence.push_back(accepting_edge->Transduce(*it, output));
+      state = accepting_edge->End();
+    }
+  }
+
+  if(state->accepting) {
+    return transduced_sequence;
+  } else {
+    return {};
+  }
 }
 
 template<class T>
@@ -515,14 +553,9 @@ std::string Edge<T>::Dot() const {
 
 template<class T>
 template<class E, class O>
-O Edge<T>::Transduce(E val, O zero, std::function<bool (E,T)> acceptor, 
-                     std::function<O (E,T)> output) const
+O Edge<T>::Transduce(E val, std::function<O (E,T)> output) const
 {
-  if(Accepts(val, acceptor)) {
-    return output(val, *edge_value_);
-  }
-
-  return zero;
+  return output(val, *edge_value_);
 }
 
 template<class T>

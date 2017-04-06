@@ -42,5 +42,12 @@ int main() {
   std::cout << "Accepts: " 
     << f.AcceptsSequence(vs.begin(), vs.end()) << '\n';
 
+  auto ts = f.TransduceSequence<decltype(vs)::iterator, std::string>(vs.begin(), vs.end(),
+      [](auto t) { return std::to_string(t*21) + "^"; }
+  );
+  for(const auto& t : ts) {
+    std::cout << t << '\n';
+  }
+
   return 0;
 }
