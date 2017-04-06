@@ -39,6 +39,10 @@ public:
   template<class E>
   bool Accepts(E val, std::function<bool (E,T)>) const;
 
+  template<class E, class O>
+  O Transduce(E val, O zero, std::function<bool (E,T)> accept, 
+              std::function<O (E,T)> output) const;
+
   bool IsEpsilon() const { return !edge_value_; }
 
   const T& Value() const { return *edge_value_; }
@@ -82,6 +86,11 @@ public:
 
   template<class Iterator, class E>
   bool AcceptsSequence(Iterator begin, Iterator end, std::function<bool (E,T)> acc);
+
+  template<class Iterator, class E, class O>
+  std::vector<O> TransduceSequence(Iterator begin, Iterator end,
+                                   std::function<bool (E,T)> acc, 
+                                   std::function<O (E,T)> output);
 
   std::string Dot() const;
 private:
@@ -398,6 +407,17 @@ bool FiniteStateMachine<T>::AcceptsSequence(Iterator begin, Iterator end,
 }
 
 template<class T>
+template<class Iterator, class E, class O>
+std::vector<O> FiniteStateMachine<T>::TransduceSequence(Iterator begin, Iterator end,
+                                                        std::function<bool (E,T)> acc, 
+                                                        std::function<O (E,T)> output)
+{
+  static_assert(std::is_same<typename std::iterator_traits<Iterator>::value_type, E>::value,
+                "Wrong iterator type used in transducer");
+  return {};
+}
+
+template<class T>
 std::string FiniteStateMachine<T>::Dot() const
 {
   std::stringstream out;
@@ -491,6 +511,18 @@ std::string Edge<T>::Dot() const {
   out << "\"]";
 
   return out.str();
+}
+
+template<class T>
+template<class E, class O>
+O Edge<T>::Transduce(E val, O zero, std::function<bool (E,T)> acceptor, 
+                     std::function<O (E,T)> output) const
+{
+  if(Accepts(val, acceptor)) {
+    return output(val, *edge_value_);
+  }
+
+  return zero;
 }
 
 template<class T>
