@@ -69,6 +69,8 @@ public:
   FiniteStateMachine<T>& AddSubMachine(FiniteStateMachine<T>& other);
 
   std::shared_ptr<State> InitialState() const;
+  
+  std::set<Edge<T>> Edges(std::shared_ptr<State> state) const;
 
   bool IsDeterministic() const;
   bool HasSingleAccept() const;
@@ -186,6 +188,16 @@ std::shared_ptr<State> FiniteStateMachine<T>::InitialState() const
 
   assert(found != adjacency_.end());
   return found->first;
+}
+
+template<class T>
+std::set<Edge<T>> FiniteStateMachine<T>::Edges(std::shared_ptr<State> state) const
+{
+  if(adjacency_.find(state) == adjacency_.end()) {
+    return {};
+  }
+
+  return adjacency_.find(state)->second;
 }
 
 template<class T>
