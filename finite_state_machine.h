@@ -207,7 +207,7 @@ std::set<T> FiniteStateMachine<T>::AllLabels() const
   auto labels = std::set<T>{};
   for(const auto& pair : adjacency_) {
     for(const auto& edge : pair.second) {
-      if(edge.edge_value_) { labels.insert(edge.Value()); }
+      if(!edge.IsEpsilon()) { labels.insert(edge.Value()); }
     }
   }
   return labels;
