@@ -71,6 +71,7 @@ public:
   std::shared_ptr<State> InitialState() const;
   
   std::set<Edge<T>> Edges(std::shared_ptr<State> state) const;
+  std::set<T> AllLabels() const;
 
   bool IsDeterministic() const;
   bool HasSingleAccept() const;
@@ -198,6 +199,18 @@ std::set<Edge<T>> FiniteStateMachine<T>::Edges(std::shared_ptr<State> state) con
   }
 
   return adjacency_.find(state)->second;
+}
+
+template<class T>
+std::set<T> FiniteStateMachine<T>::AllLabels() const
+{
+  auto labels = std::set<T>{};
+  for(const auto& pair : adjacency_) {
+    for(const auto& edge : pair.second) {
+      if(edge.Value()) { labels.insert(*edge.Value()); }
+    }
+  }
+  return labels;
 }
 
 template<class T>
