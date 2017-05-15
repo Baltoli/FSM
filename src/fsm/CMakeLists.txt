@@ -21,7 +21,10 @@ install(EXPORT FSMConfig DESTINATION share/FSM/cmake)
 export(TARGETS fsm FILE FSMConfig.cmake)
 
 add_executable(testfsm
-  test/testmain.cpp)
+  test/testmain.cpp
+  test/teststate.cpp
+  test/testedge.cpp
+  test/testfsm.cpp)
 
 target_link_libraries(testfsm 
   fsm)
