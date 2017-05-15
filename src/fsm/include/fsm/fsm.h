@@ -1,59 +1,15 @@
 #ifndef FINITE_STATE_MACHINE_H
 #define FINITE_STATE_MACHINE_H
 
+#include <fsm/edge.h>
+#include <fsm/state.h>
+
 #include <cassert>
 #include <map>
 #include <queue>
 #include <set>
 #include <sstream>
 #include <string>
-
-/**
- * Declarations
- */
-
-struct State {
-  State() {}
-
-  State(std::string s) :
-    name(s) {}
-
-  std::string name = "";
-  bool accepting = false;
-  bool initial = false;
-
-  std::string Dot() const;
-
-  static State Combined(std::set<std::shared_ptr<State>> states);
-};
-
-template<class T>
-class Edge {
-public:
-  Edge(std::shared_ptr<State> end) :
-    end_(end), edge_value_(nullptr) {}
-
-  Edge(std::shared_ptr<State> end, T val) :
-    end_(end), edge_value_(new T{val}) {}
-
-  template<class E>
-  bool Accepts(E val, std::function<bool (E,T)>) const;
-
-  template<class E, class O>
-  O Transduce(E val, std::function<O (E,T)> output) const;
-
-  bool IsEpsilon() const { return !edge_value_; }
-
-  const T& Value() const { return *edge_value_; }
-  std::shared_ptr<State> End() const { return end_; }
-
-  bool operator<(const Edge& other) const;
-
-  std::string Dot() const;
-private:
-  std::shared_ptr<State> end_;
-  std::shared_ptr<T> edge_value_;
-};
 
 template<class T>
 class FiniteStateMachine {
@@ -99,10 +55,6 @@ public:
 private:
   std::map<std::shared_ptr<State>, std::set<Edge<T>>> adjacency_; 
 };
-
-/**
- * FiniteStateMachine Implementation
- */
 
 // "Law of the big two" rather than the rule of three applies here because the
 // only resources the class manages are smart pointers. The reason we want to
@@ -472,96 +424,6 @@ std::string FiniteStateMachine<T>::Dot() const
   out << "}";
 
   return out.str();
-}
-
-/**
- * State Implementation
- */
-
-inline std::string State::Dot() const
-{
-  std::stringstream out;
-
-  out << "\"" << name << "\"";
-
-  if(accepting) {
-    out << " [shape=doublecircle]";
-  }
-
-  if(initial) {
-    out << ";\"secret\" [style=invis,shape=point];\"secret\"->\"" << name << "\"";
-  }
-
-  return out.str();
-}
-
-inline State State::Combined(std::set<std::shared_ptr<State>> states) 
-{
-  auto state = State{};
-
-  std::stringstream name;
-  name << "{";
-
-  auto i = 0;
-  for(auto it = states.begin(); it != states.end(); i++, it++) {
-    name << (*it)->name;
-    if(i != states.size() - 1) {
-      name << ", ";
-    }
-  }
-
-  name << "}";
-  state.name = name.str();
-
-  state.accepting = std::any_of(states.begin(), states.end(),
-    [=](auto st) {
-      return st->accepting;
-    }
-  );
-
-  state.initial = (states.size() == 1 && (*states.begin())->initial);
-
-  return state;
-}
-
-/**
- * Edge Implementation
- */
-
-template<class T>
-template<class E>
-bool Edge<T>::Accepts(E val, std::function<bool (E,T)> acceptor) const
-{
-  return edge_value_ && acceptor(val, *edge_value_);
-}
-
-template<class T>
-std::string Edge<T>::Dot() const {
-  std::stringstream out;
-
-  out << "\"" << end_->name << "\"";
-  out << " [label=\"  ";
-  if(edge_value_) {
-    out << *edge_value_;
-  } else {
-    out << "&#949;";
-  }
-  out << "\"]";
-
-  return out.str();
-}
-
-template<class T>
-template<class E, class O>
-O Edge<T>::Transduce(E val, std::function<O (E,T)> output) const
-{
-  return output(val, *edge_value_);
-}
-
-template<class T>
-bool Edge<T>::operator<(const Edge& other) const {
-  return (end_ < other.end_) || 
-         (end_ == other.end_ && edge_value_ < other.edge_value_);
 }
 
 #endif
