@@ -8,8 +8,7 @@ dependencies:
 test:
   pre:
     - mkdir build
-    - cd build
-    - cmake ../src
-    - make
+    - cmake ../src && make:
+        pwd: build
   override:
     - ctest --output-on-failure
