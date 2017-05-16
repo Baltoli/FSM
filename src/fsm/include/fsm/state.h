@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <set>
+#include <sstream>
 #include <string>
 
 /**
@@ -35,12 +36,12 @@ struct State {
   std::string name = "";
 
   /**
-   * Does an FSM accept if it is in this state?
+   * `true` if an FSM accepts in this state.
    */
   bool accepting = false;
 
   /**
-   * Is this state the initial state of the FSM it belongs to?
+   * `true` if this is an initial state for its FSM.
    */
   bool initial = false;
 
@@ -55,19 +56,67 @@ struct State {
   std::string Dot() const;
 
   /**
-   * Construct a new state from a set of existing states.
+   * Construct a new state from a range of existing states.
    *
    * The resulting state has a name derived from the names of the passed states,
    * and derives its properties from these states as follows:
    * * If any of the passed states are accepting, the combined state is
    *   accepting.
-   * * If there is exactly one state in the set (and it is initial), the new
+   * * If there is exactly one state in the range (and it is initial), the new
    *   state is also initial.
    *
-   * \param states A set of states to combine into a new state.
-   * \returns A new state derived from the given set of states.
+   * \param states A range of states to combine into a new state.
+   * \returns A new state derived from the given range of states.
    */
-  static State Combined(std::set<std::shared_ptr<State>> states);
+  template<class Iter>
+  static State Combined(Iter begin, Iter end);
+
+  /**
+   * Wraps \ref State::Combined(Iter, Iter).
+   *
+   * This method is a wrapper that allows containers to be passed directly by
+   * calling `std::begin` and `std::end` on them.
+   */
+  template<class Container>
+  static State Combined(Container in);
 };
+
+template<class Iter>
+State State::Combined(Iter begin, Iter end) 
+{
+  auto size = std::distance(begin, end);
+
+  auto state = State{};
+
+  std::stringstream name;
+  name << "{";
+
+  auto i = 0;
+  for(auto it = begin; it != end; i++, it++) {
+    name << (*it)->name;
+    if(i != size - 1) {
+      name << ", ";
+    }
+  }
+
+  name << "}";
+  state.name = name.str();
+
+  state.accepting = std::any_of(begin, end,
+    [=](auto st) {
+      return st->accepting;
+    }
+  );
+
+  state.initial = (size == 1 && (*begin)->initial);
+
+  return state;
+}
+
+template<class Container>
+State State::Combined(Container in)
+{
+  return Combined(std::begin(in), std::end(in));
+}
 
 #endif
