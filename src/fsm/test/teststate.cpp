@@ -34,7 +34,7 @@ TEST_CASE("basic state operations") {
   }
 }
 
-TEST_CASE("DOT output") {
+TEST_CASE("state DOT output") {
   SECTION("output includes name") {
     State s("name");
     std::regex r("name");
