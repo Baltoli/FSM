@@ -1,3 +1,7 @@
+/**
+ * \file
+ */
+
 #ifndef FINITE_STATE_MACHINE_H
 #define FINITE_STATE_MACHINE_H
 
@@ -11,50 +15,193 @@
 #include <sstream>
 #include <string>
 
+/**
+ * Represents a finite state machine.
+ *
+ * A machine has a set of states with directed edges between them. These edges
+ * can be labelled with values, and sequences can be checked for acceptance
+ * against the machine (possibly using customised acceptance criteria).
+ */
 template<class T>
 class FiniteStateMachine {
 public:
+  /**
+   * Construct an empty FSM.
+   *
+   * The resulting machine has no states and no edges.
+   */
   FiniteStateMachine() {}
 
+  /**
+   * Copy-construct an FSM.
+   *
+   * This will copy all of the \ref State "States" in \p other, then reconstruct
+   * the edges in the new FSM to be identical to those in \p other.
+   */
   FiniteStateMachine(const FiniteStateMachine<T>& other);
+
+  /**
+   * Copy-assignment using copy-and-swap.
+   */
   FiniteStateMachine<T>& operator=(const FiniteStateMachine<T> other);
 
+  /**
+   * Add a new state to the machine.
+   *
+   * This method takes a \ref State by value, and returns a `std::shared_ptr` to
+   * a \ref State. The reason for this is that we should be able to have many
+   * states with the same name and properties that are not conceptually the same
+   * state.
+   *
+   * \p s is copied into a dynamically allocated \ref State, and the returned
+   * pointer is the "canonical" way of addressing the new state.
+   */
   std::shared_ptr<State> AddState(State s);
-  Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end);
-  Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end, T val);
-  FiniteStateMachine<T>& AddSubMachine(FiniteStateMachine<T>& other);
 
+  /**
+   * Add an epsilon edge between two states.
+   */
+  Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end);
+
+  /**
+   * Add a labelled edge between two states.
+   */
+  Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end, T val);
+  
+  /**
+   * Add another finite state machine into this machine.
+   *
+   * The way this works is a little subtle - this machine will share the same
+   * states as \p other (but with separate adjacency lists). The edges from \p
+   * other are recreated in this machine. Because states are shared, \p other
+   * can be destroyed and the states will remain valid as long as this machine
+   * is alive.
+   *
+   * Note that this does not perform any "sanitisation" - accepting and initial
+   * states in \p other will need to be modified before this machine can be
+   * used. This is a domain-specific problem, and so this method does not
+   * prescribe how that should be performed.
+   */
+  void AddSubMachine(const FiniteStateMachine<T>& other);
+
+  /**
+   * Get the initial state of this machine.
+   *
+   * If there are multiple initial states (i.e. if the machine is in an
+   * intermediate form), then the result of this call should not be relied on.
+   * Returns `nullptr` if there is no initial state.
+   */
   std::shared_ptr<State> InitialState() const;
   
+  /**
+   * Get a set of all the edges leaving a state.
+   */
   std::set<Edge<T>> Edges(std::shared_ptr<State> state) const;
+
+  /**
+   * Get a set of all the edge labels used in this machine.
+   */
   std::set<T> AllLabels() const;
 
+  /**
+   * Returns true if this machine is deterministic.
+   *
+   * A machine is deterministic if there are no epsilon edges, and each state
+   * has only one edge with any given label.
+   */
   bool IsDeterministic() const;
+
+  /**
+   * Returns true if this machine has a single accepting state only.
+   */
   bool HasSingleAccept() const;
 
+  /**
+   * Get the epsilon closure of a state.
+   *
+   * The epsilon closure is the set of states that are reachable using only
+   * epsilon transitions.
+   */
   std::set<std::shared_ptr<State>> EpsilonClosure(std::shared_ptr<State> state);
+
+  /**
+   * Get the set of accepting states for this machine.
+   */
   std::set<std::shared_ptr<State>> AcceptingStates();
 
-  FiniteStateMachine<T> EpsilonFree();
-  FiniteStateMachine<T> Deterministic();
-  FiniteStateMachine<T> Relabeled();
+  /**
+   * Create a new machine equivalent to this one with no epsilon edges.
+   *
+   * The resulting machine is behaviourally equivalent to this one, but uses the
+   * epsilon closure algorithm to remove epsilon edges. The resulting machine
+   * may still be nondeterministic.
+   */
+  FiniteStateMachine<T> EpsilonFree() const;
 
+  /**
+   * Create a new machine equivalent to this one, but deterministic.
+   *
+   * This uses the powerset construction, and the number of states in the new
+   * machine may be exponentially more than the number in this machine.
+   */
+  FiniteStateMachine<T> Deterministic() const;
+
+  /**
+   * Create a new machine equivalent to this one with states relabelled.
+   *
+   * If a machine is created mechanically, its state names can be unwieldy (i.e.
+   * too long or not existing). This relabels the states sequentially to make
+   * debug output easier to understand.
+   */
+  FiniteStateMachine<T> Relabeled() const;
+
+  /**
+   * Returns true if this machine accepts the sequence [begin, end).
+   */
   template<class Iterator>
   bool AcceptsSequence(Iterator begin, Iterator end);
 
+  /**
+   * Returns true if this machine accepts the sequence [begin, end).
+   *
+   * Uses \p acc as a custom acceptance function (rather than equality).
+   */
   template<class Iterator, class E>
   bool AcceptsSequence(Iterator begin, Iterator end, std::function<bool (E,T)> acc);
 
+  /**
+   * Generate a transduced output sequence from [begin, end).
+   *
+   * Output values are generated from edge labels and \p output.
+   */
   template<class Iterator, class O>
   std::vector<O> TransduceSequence(Iterator begin, Iterator end,
                                    std::function<O (T)> output);
 
+  /**
+   * Generate a transduced output sequence from [begin, end).
+   *
+   * Output values are generated from edge labels and \p output. This variant
+   * allows for the input sequence type to be different to the edge label type.
+   */
   template<class Iterator, class E, class O>
   std::vector<O> TransduceSequence(Iterator begin, Iterator end,
                                    std::function<bool (E,T)> acc, 
                                    std::function<O (E,T)> output);
 
+  /**
+   * Get a DOT formatted debug output representing this machine.
+   *
+   * The output is a valid DOT digraph.
+   */
   std::string Dot() const;
+
+  /**
+   * Get a DOT formatted debug output representing this machine.
+   *
+   * The output is a valid DOT digraph, and edge values are printed using the
+   * function \p printer.
+   */
   std::string Dot(std::function<std::string (T)> printer) const;
 private:
   std::map<std::shared_ptr<State>, std::set<Edge<T>>> adjacency_; 
@@ -122,13 +269,11 @@ Edge<T> FiniteStateMachine<T>::AddEdge(std::shared_ptr<State> begin,
 }
 
 template<class T>
-FiniteStateMachine<T>& FiniteStateMachine<T>::AddSubMachine(FiniteStateMachine<T>& other)
+void FiniteStateMachine<T>::AddSubMachine(const FiniteStateMachine<T>& other)
 {
   for(const auto& adj_list : other.adjacency_) {
     adjacency_[adj_list.first] = adj_list.second;
   }
-
-  return other;
 }
 
 template<class T>
@@ -140,8 +285,11 @@ std::shared_ptr<State> FiniteStateMachine<T>::InitialState() const
     }
   );
 
-  assert(found != adjacency_.end());
-  return found->first;
+  if(found != adjacency_.end()) {
+    return found->first;
+  } else {
+    return nullptr;
+  }
 }
 
 template<class T>
@@ -254,7 +402,7 @@ std::set<std::shared_ptr<State>> FiniteStateMachine<T>::AcceptingStates()
 }
 
 template<class T>
-FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree()
+FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree() const
 {
   auto closure_map = std::map<std::shared_ptr<State>, std::shared_ptr<State>>{};
   auto eps_free = FiniteStateMachine<T>{};
@@ -284,7 +432,7 @@ FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree()
 }
 
 template<class T>
-FiniteStateMachine<T> FiniteStateMachine<T>::Deterministic()
+FiniteStateMachine<T> FiniteStateMachine<T>::Deterministic() const
 {
   auto eps_free = EpsilonFree();
   auto dfa = FiniteStateMachine<T>{};
@@ -336,7 +484,7 @@ FiniteStateMachine<T> FiniteStateMachine<T>::Deterministic()
 }
 
 template<class T>
-FiniteStateMachine<T> FiniteStateMachine<T>::Relabeled()
+FiniteStateMachine<T> FiniteStateMachine<T>::Relabeled() const
 {
   auto new_fsm = *this;
   int label = 0;
@@ -352,11 +500,8 @@ template<class T>
 template<class Iterator>
 bool FiniteStateMachine<T>::AcceptsSequence(Iterator begin, Iterator end)
 {
-  return AcceptsSequence<Iterator, T>(begin, end, 
-    [=](auto t1, auto t2) {
-      return t1 == t2;
-    }
-  );
+  using value_type = typename std::iterator_traits<Iterator>::value_type;
+  return AcceptsSequence<Iterator, T>(begin, end, std::equal_to<value_type>{});
 }
 
 template<class T>

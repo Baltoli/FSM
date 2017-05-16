@@ -1,3 +1,7 @@
+/**
+ * \file
+ */
+
 #ifndef FSM_EDGE_H
 #define FSM_EDGE_H
 
@@ -8,28 +12,89 @@
 #include <sstream>
 #include <string>
 
+/**
+ * Represents a single edge in a finite state machine.
+ *
+ * An edge knows its end state, but is independent of its start state (this
+ * information is stored in the finite state machine itself).
+ *
+ * Edges can have a value associated with them (which is then used to implement
+ * acceptance and transducing, or they can be epsilon-edges).
+ */
 template<class T>
 class Edge {
 public:
+  /**
+   * Construct an epsilon edge (one that has no associated value).
+   *
+   * \param end The end state of the edge
+   */
   Edge(std::shared_ptr<State> end) :
     end_(end), edge_value_(nullptr) {}
 
+  /**
+   * Construct a labelled edge (one that has an associated value).
+   *
+   * \param end The end state of the edge
+   * \param value The edge value
+   */
   Edge(std::shared_ptr<State> end, T val) :
     end_(end), edge_value_(new T{val}) {}
 
+  /**
+   * Returns true if the edge accepts a value.
+   *
+   * The function \p comp is used to customise acceptance criteria for different
+   * types. The edge label and checked value are passed as the parameters to \p
+   * comp.
+   */
   template<class E>
-  bool Accepts(E val, std::function<bool (E,T)>) const;
+  bool Accepts(E val, std::function<bool (E,T)> comp) const;
 
+  /**
+   * Returns true if the edge is labelled with a value.
+   *
+   * \p val is checked against the edge label using `std::equal_to`. If they are
+   * equal, the edge accepts \p val.
+   */
+  bool Accepts(T val) const;
+
+  /**
+   * Generate a new value from \p val and the edge label.
+   *
+   * This can be used to implement finite state transducers that transform input
+   * sequences into an output sequence.
+   */
   template<class E, class O>
   O Transduce(E val, std::function<O (E,T)> output) const;
 
+  /**
+   * Returns true if the edge is an epsilon edge (it has no label).
+   */
   bool IsEpsilon() const { return !edge_value_; }
 
+  /**
+   * Access the value labelling this edge.
+   *
+   * This is not safe to call if the edge is an epsilon edge.
+   */
   const T& Value() const { return *edge_value_; }
+
+  /**
+   * Get the state at the end of this edge.
+   */
   std::shared_ptr<State> End() const { return end_; }
 
+  /**
+   * Lexicographical comparison on (end state, value).
+   */
   bool operator<(const Edge& other) const;
 
+  /**
+   * Get a DOT formatted representation of this edge.
+   *
+   * The returned string can be used in a graphviz graph.
+   */
   std::string Dot() const;
 private:
   std::shared_ptr<State> end_;
@@ -41,6 +106,12 @@ template<class E>
 bool Edge<T>::Accepts(E val, std::function<bool (E,T)> acceptor) const
 {
   return edge_value_ && acceptor(val, *edge_value_);
+}
+
+template<class T>
+bool Edge<T>::Accepts(T val) const
+{
+  return Accepts<T>(val, std::equal_to<T>{});
 }
 
 template<class T>
@@ -74,6 +145,5 @@ bool Edge<T>::operator<(const Edge& other) const {
   return (end_ < other.end_) || 
          (end_ == other.end_ && edge_value_ < other.edge_value_);
 }
-
 
 #endif
