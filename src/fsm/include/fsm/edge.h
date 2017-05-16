@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <memory>
+#include <sstream>
 #include <string>
 
 template<class T>
@@ -32,7 +33,7 @@ public:
   std::string Dot() const;
 private:
   std::shared_ptr<State> end_;
-  std::shared_ptr<T> edge_value_;
+  std::unique_ptr<T> edge_value_;
 };
 
 template<class T>
@@ -58,6 +59,9 @@ std::string Edge<T>::Dot() const {
   return out.str();
 }
 
+// TODO: this dereferences the edge value, meaning that it will crash when
+// called on an epsilon-edge. Best way to handle this is maybe to add a default
+// O param?
 template<class T>
 template<class E, class O>
 O Edge<T>::Transduce(E val, std::function<O (E,T)> output) const
