@@ -1,14 +1,12 @@
 project(libfsm VERSION 0.1 LANGUAGES CXX)
 
-add_library(fsm
-  src/state.cpp)
+add_library(fsm INTERFACE)
 
-target_include_directories(fsm PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+target_include_directories(fsm INTERFACE
   $<INSTALL_INTERFACE:include>
-  PRIVATE src)
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-target_compile_features(fsm PUBLIC 
+target_compile_features(fsm INTERFACE
   cxx_auto_type
   cxx_generic_lambdas)
 
@@ -25,8 +23,6 @@ add_executable(testfsm
   test/teststate.cpp
   test/testedge.cpp
   test/testfsm.cpp)
-
-target_link_libraries(testfsm 
-  fsm)
+target_link_libraries(testfsm fsm)
 
 add_test(testfsm testfsm)
