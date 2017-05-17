@@ -10,6 +10,7 @@
 
 #include <cassert>
 #include <map>
+#include <iostream>
 #include <queue>
 #include <set>
 #include <sstream>
@@ -136,7 +137,7 @@ public:
    * epsilon closure algorithm to remove epsilon edges. The resulting machine
    * may still be nondeterministic.
    */
-  FiniteStateMachine<T> EpsilonFree() const;
+  FiniteStateMachine<T> EpsilonFree();
 
   /**
    * Create a new machine equivalent to this one, but deterministic.
@@ -144,7 +145,7 @@ public:
    * This uses the powerset construction, and the number of states in the new
    * machine may be exponentially more than the number in this machine.
    */
-  FiniteStateMachine<T> Deterministic() const;
+  FiniteStateMachine<T> Deterministic();
 
   /**
    * Create a new machine equivalent to this one with states relabelled.
@@ -153,7 +154,12 @@ public:
    * too long or not existing). This relabels the states sequentially to make
    * debug output easier to understand.
    */
-  FiniteStateMachine<T> Relabeled() const;
+  FiniteStateMachine<T> Relabeled();
+
+  /**
+   * Create a new machine that is the cross product of this one with \p other.
+   */
+  FiniteStateMachine<T> CrossProduct(FiniteStateMachine<T> other) const;
 
   /**
    * Returns true if this machine accepts the sequence [begin, end).
@@ -402,7 +408,7 @@ std::set<std::shared_ptr<State>> FiniteStateMachine<T>::AcceptingStates()
 }
 
 template<class T>
-FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree() const
+FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree()
 {
   auto closure_map = std::map<std::shared_ptr<State>, std::shared_ptr<State>>{};
   auto eps_free = FiniteStateMachine<T>{};
@@ -432,7 +438,7 @@ FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree() const
 }
 
 template<class T>
-FiniteStateMachine<T> FiniteStateMachine<T>::Deterministic() const
+FiniteStateMachine<T> FiniteStateMachine<T>::Deterministic()
 {
   auto eps_free = EpsilonFree();
   auto dfa = FiniteStateMachine<T>{};
@@ -484,7 +490,7 @@ FiniteStateMachine<T> FiniteStateMachine<T>::Deterministic() const
 }
 
 template<class T>
-FiniteStateMachine<T> FiniteStateMachine<T>::Relabeled() const
+FiniteStateMachine<T> FiniteStateMachine<T>::Relabeled()
 {
   auto new_fsm = *this;
   int label = 0;
@@ -494,6 +500,55 @@ FiniteStateMachine<T> FiniteStateMachine<T>::Relabeled() const
   }
 
   return new_fsm;
+}
+
+template<class T>
+FiniteStateMachine<T> FiniteStateMachine<T>::CrossProduct(FiniteStateMachine<T> other) const
+{
+  FiniteStateMachine<T> fsm;
+
+  using StatePair = std::pair<std::shared_ptr<State>, std::shared_ptr<State>>;
+  std::map<StatePair, std::shared_ptr<State>> mapping;
+
+  for(auto&& this_list : adjacency_) {
+    for(auto&& other_list: other.adjacency_) {
+      std::set<std::shared_ptr<State>> p{this_list.first, other_list.first};
+      mapping[std::make_pair(this_list.first, other_list.first)] =
+        fsm.AddState(State::Combined(p));
+    }
+  }
+
+  mapping[std::make_pair(InitialState(), other.InitialState())]->initial = true;
+  for(auto&& pair : mapping) {
+    if(pair.first.first->accepting || pair.first.second->accepting) {
+      pair.second->accepting = true;
+    }
+  }
+
+  for(auto&& this_list : adjacency_) {
+    for(auto&& other_list : other.adjacency_) {
+      auto p = mapping[std::make_pair(this_list.first, other_list.first)];
+      for(auto&& edge : this_list.second) {
+        auto q = mapping[std::make_pair(edge.End(), other_list.first)];
+        if(edge.IsEpsilon()) {
+          fsm.AddEdge(p, q);
+        } else {
+          fsm.AddEdge(p, q, edge.Value());
+        }
+      }
+
+      for(auto&& edge : other_list.second) {
+        auto q = mapping[std::make_pair(this_list.first, edge.End())];
+        if(edge.IsEpsilon()) {
+          fsm.AddEdge(p, q);
+        } else {
+          fsm.AddEdge(p, q, edge.Value());
+        }
+      }
+    }
+  }
+
+  return fsm;
 }
 
 template<class T>
@@ -579,6 +634,16 @@ std::vector<O> FiniteStateMachine<T>::TransduceSequence(Iterator begin, Iterator
 }
 
 template<class T>
+std::string FiniteStateMachine<T>::Dot() const
+{
+  return Dot([](auto t) {
+    std::stringstream ss;
+    ss << t;
+    return ss.str();
+  });
+}
+
+template<class T>
 std::string FiniteStateMachine<T>::Dot(std::function<std::string (T)> printer) const
 {
   std::stringstream out;
@@ -589,7 +654,7 @@ std::string FiniteStateMachine<T>::Dot(std::function<std::string (T)> printer) c
   for(const auto& adj_list : adjacency_) {
     out << "  " << adj_list.first->Dot() << '\n';
     for(const auto& edge : adj_list.second) {
-      out << "  \"" << adj_list.first->name << "\" -> " << edge.Dot(printer) << "\n";
+      out << "  \"" << adj_list.first->name << "\" -> " << edge.Dot() << "\n";
     }
   }
   out << "}";
