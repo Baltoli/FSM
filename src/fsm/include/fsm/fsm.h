@@ -10,7 +10,6 @@
 
 #include <cassert>
 #include <map>
-#include <iostream>
 #include <queue>
 #include <set>
 #include <sstream>
@@ -58,6 +57,11 @@ public:
    * pointer is the "canonical" way of addressing the new state.
    */
   std::shared_ptr<State> AddState(State s);
+
+  template<class... Args>
+  std::shared_ptr<State> AddState(Args&&...);
+
+  std::vector<std::shared_ptr<State>> AddStates(size_t n);
 
   /**
    * Add an epsilon edge between two states.
@@ -254,6 +258,26 @@ std::shared_ptr<State> FiniteStateMachine<T>::AddState(State s)
   auto pointer = std::shared_ptr<State>{new State{s}};
   adjacency_[pointer] = {};
   return pointer;
+}
+
+template<class T>
+template<class... Args>
+std::shared_ptr<State> FiniteStateMachine<T>::AddState(Args&&... args)
+{
+  return AddState(State(std::forward<Args>(args)...));
+}
+
+template<class T>
+std::vector<std::shared_ptr<State>> FiniteStateMachine<T>::AddStates(size_t n)
+{
+  std::vector<std::shared_ptr<State>> states;
+  states.reserve(n);
+
+  for(auto i = 0; i < n; ++i) {
+    states.push_back(AddState());
+  }
+
+  return states;
 }
 
 template<class T>
