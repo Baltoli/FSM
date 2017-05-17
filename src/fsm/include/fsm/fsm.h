@@ -700,7 +700,7 @@ std::string FiniteStateMachine<T>::Dot(std::function<std::string (T)> printer) c
   for(const auto& adj_list : adjacency_) {
     out << "  " << adj_list.first->Dot() << '\n';
     for(const auto& edge : adj_list.second) {
-      out << "  \"" << adj_list.first->name << "\" -> " << edge.Dot() << "\n";
+      out << "  \"" << adj_list.first->name << "\" -> " << edge.Dot(printer) << "\n";
     }
   }
   out << "}";

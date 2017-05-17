@@ -111,6 +111,14 @@ public:
   /**
    * Get a DOT formatted representation of this edge.
    *
+   * The returned string can be used in a graphviz graph. This overload uses a
+   * custom printing function to print edge labels.
+   */
+  std::string Dot(std::function<std::string (T)> printer) const;
+
+  /**
+   * Get a DOT formatted representation of this edge.
+   *
    * The returned string can be used in a graphviz graph.
    */
   std::string Dot() const;
@@ -133,19 +141,28 @@ bool Edge<T>::Accepts(T val) const
 }
 
 template<class T>
-std::string Edge<T>::Dot() const {
+std::string Edge<T>::Dot(std::function<std::string (T)> printer) const {
   std::stringstream out;
 
   out << "\"" << end_->name << "\"";
   out << " [label=\"  ";
   if(edge_value_) {
-    out << *edge_value_;
+    out << printer(*edge_value_);
   } else {
     out << "&#949;";
   }
   out << "\"]";
 
   return out.str();
+}
+
+template<class T>
+std::string Edge<T>::Dot() const {
+  return Dot([](auto t) {
+    std::stringstream ss;
+    ss << t;
+    return ss.str();
+  });
 }
 
 // TODO: this dereferences the edge value, meaning that it will crash when
