@@ -42,6 +42,24 @@ public:
     end_(end), edge_value_(new T{val}) {}
 
   /**
+   * Copy construct an edge.
+   *
+   * This copies the label value into a new `unique_ptr` (as we're really using
+   * it to simulate an optional).
+   */
+  Edge(const Edge<T>& other) :
+    end_(other.end_),
+    edge_value_(other.edge_value_ ? new T{*other.edge_value_} : nullptr) {}
+
+  /**
+   * Copy-and-swap assignment.
+   */
+  Edge<T>& operator=(Edge<T> other) {
+    std::swap(*this, other);
+    return *this;
+  }
+
+  /**
    * Returns true if the edge accepts a value.
    *
    * The function \p comp is used to customise acceptance criteria for different

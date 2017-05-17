@@ -59,6 +59,24 @@ public:
   std::shared_ptr<State> AddState(State s);
 
   /**
+   * Add a new state to the machine.
+   *
+   * This is a convenience method that forwards its arguments to construct a
+   * \ref State.
+   */
+  template<class... Args>
+  std::shared_ptr<State> AddState(Args&&...);
+
+  /**
+   * Add a number of default-constructed states to the machine.
+   *
+   * This is a convenience method that allows for a number of states to be added
+   * to the machine easily, while retaining a reference to the added states (so
+   * that they can be modified or edges can be added).
+   */
+  std::vector<std::shared_ptr<State>> AddStates(size_t n);
+
+  /**
    * Add an epsilon edge between two states.
    */
   Edge<T> AddEdge(std::shared_ptr<State> begin, std::shared_ptr<State> end);
@@ -136,7 +154,7 @@ public:
    * epsilon closure algorithm to remove epsilon edges. The resulting machine
    * may still be nondeterministic.
    */
-  FiniteStateMachine<T> EpsilonFree() const;
+  FiniteStateMachine<T> EpsilonFree();
 
   /**
    * Create a new machine equivalent to this one, but deterministic.
@@ -144,7 +162,7 @@ public:
    * This uses the powerset construction, and the number of states in the new
    * machine may be exponentially more than the number in this machine.
    */
-  FiniteStateMachine<T> Deterministic() const;
+  FiniteStateMachine<T> Deterministic();
 
   /**
    * Create a new machine equivalent to this one with states relabelled.
@@ -153,7 +171,21 @@ public:
    * too long or not existing). This relabels the states sequentially to make
    * debug output easier to understand.
    */
-  FiniteStateMachine<T> Relabeled() const;
+  FiniteStateMachine<T> Relabeled();
+
+  /**
+   * Create a new machine that is the cross product of this one with \p other.
+   *
+   * The cross product of machines `A` and `B` draws its states from the set `A
+   * x B`, and has edges `(a_i, b_i) -> (a_j, b_i)` if `A` has an edge `a_i ->
+   * a_j` (similarly for edges in `B`).
+   *
+   * This construction implements a form of inclusive-or on finite state
+   * machines where the transitions from either machine are permitted, and
+   * accepting states are `(a_i, b_i)` where either `a_i` or `b_i` are
+   * accepting.
+   */
+  FiniteStateMachine<T> CrossProduct(FiniteStateMachine<T> other) const;
 
   /**
    * Returns true if this machine accepts the sequence [begin, end).
@@ -248,6 +280,26 @@ std::shared_ptr<State> FiniteStateMachine<T>::AddState(State s)
   auto pointer = std::shared_ptr<State>{new State{s}};
   adjacency_[pointer] = {};
   return pointer;
+}
+
+template<class T>
+template<class... Args>
+std::shared_ptr<State> FiniteStateMachine<T>::AddState(Args&&... args)
+{
+  return AddState(State(std::forward<Args>(args)...));
+}
+
+template<class T>
+std::vector<std::shared_ptr<State>> FiniteStateMachine<T>::AddStates(size_t n)
+{
+  std::vector<std::shared_ptr<State>> states;
+  states.reserve(n);
+
+  for(auto i = 0; i < n; ++i) {
+    states.push_back(AddState());
+  }
+
+  return states;
 }
 
 template<class T>
@@ -402,7 +454,7 @@ std::set<std::shared_ptr<State>> FiniteStateMachine<T>::AcceptingStates()
 }
 
 template<class T>
-FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree() const
+FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree()
 {
   auto closure_map = std::map<std::shared_ptr<State>, std::shared_ptr<State>>{};
   auto eps_free = FiniteStateMachine<T>{};
@@ -432,7 +484,7 @@ FiniteStateMachine<T> FiniteStateMachine<T>::EpsilonFree() const
 }
 
 template<class T>
-FiniteStateMachine<T> FiniteStateMachine<T>::Deterministic() const
+FiniteStateMachine<T> FiniteStateMachine<T>::Deterministic()
 {
   auto eps_free = EpsilonFree();
   auto dfa = FiniteStateMachine<T>{};
@@ -484,7 +536,7 @@ FiniteStateMachine<T> FiniteStateMachine<T>::Deterministic() const
 }
 
 template<class T>
-FiniteStateMachine<T> FiniteStateMachine<T>::Relabeled() const
+FiniteStateMachine<T> FiniteStateMachine<T>::Relabeled()
 {
   auto new_fsm = *this;
   int label = 0;
@@ -494,6 +546,55 @@ FiniteStateMachine<T> FiniteStateMachine<T>::Relabeled() const
   }
 
   return new_fsm;
+}
+
+template<class T>
+FiniteStateMachine<T> FiniteStateMachine<T>::CrossProduct(FiniteStateMachine<T> other) const
+{
+  FiniteStateMachine<T> fsm;
+
+  using StatePair = std::pair<std::shared_ptr<State>, std::shared_ptr<State>>;
+  std::map<StatePair, std::shared_ptr<State>> mapping;
+
+  for(auto&& this_list : adjacency_) {
+    for(auto&& other_list: other.adjacency_) {
+      std::set<std::shared_ptr<State>> p{this_list.first, other_list.first};
+      mapping[std::make_pair(this_list.first, other_list.first)] =
+        fsm.AddState(State::Combined(p));
+    }
+  }
+
+  mapping[std::make_pair(InitialState(), other.InitialState())]->initial = true;
+  for(auto&& pair : mapping) {
+    if(pair.first.first->accepting || pair.first.second->accepting) {
+      pair.second->accepting = true;
+    }
+  }
+
+  for(auto&& this_list : adjacency_) {
+    for(auto&& other_list : other.adjacency_) {
+      auto p = mapping[std::make_pair(this_list.first, other_list.first)];
+      for(auto&& edge : this_list.second) {
+        auto q = mapping[std::make_pair(edge.End(), other_list.first)];
+        if(edge.IsEpsilon()) {
+          fsm.AddEdge(p, q);
+        } else {
+          fsm.AddEdge(p, q, edge.Value());
+        }
+      }
+
+      for(auto&& edge : other_list.second) {
+        auto q = mapping[std::make_pair(this_list.first, edge.End())];
+        if(edge.IsEpsilon()) {
+          fsm.AddEdge(p, q);
+        } else {
+          fsm.AddEdge(p, q, edge.Value());
+        }
+      }
+    }
+  }
+
+  return fsm;
 }
 
 template<class T>
@@ -579,6 +680,16 @@ std::vector<O> FiniteStateMachine<T>::TransduceSequence(Iterator begin, Iterator
 }
 
 template<class T>
+std::string FiniteStateMachine<T>::Dot() const
+{
+  return Dot([](auto t) {
+    std::stringstream ss;
+    ss << t;
+    return ss.str();
+  });
+}
+
+template<class T>
 std::string FiniteStateMachine<T>::Dot(std::function<std::string (T)> printer) const
 {
   std::stringstream out;
@@ -589,7 +700,7 @@ std::string FiniteStateMachine<T>::Dot(std::function<std::string (T)> printer) c
   for(const auto& adj_list : adjacency_) {
     out << "  " << adj_list.first->Dot() << '\n';
     for(const auto& edge : adj_list.second) {
-      out << "  \"" << adj_list.first->name << "\" -> " << edge.Dot(printer) << "\n";
+      out << "  \"" << adj_list.first->name << "\" -> " << edge.Dot() << "\n";
     }
   }
   out << "}";
