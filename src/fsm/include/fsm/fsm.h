@@ -43,7 +43,7 @@ public:
   /**
    * Copy-assignment using copy-and-swap.
    */
-  FiniteStateMachine<T>& operator=(const FiniteStateMachine<T> other);
+  FiniteStateMachine<T>& operator=(FiniteStateMachine<T> other);
 
   /**
    * Add a new state to the machine.
@@ -268,9 +268,9 @@ FiniteStateMachine<T>::FiniteStateMachine(const FiniteStateMachine<T>& other)
 
 template<class T>
 FiniteStateMachine<T>& 
-  FiniteStateMachine<T>::operator=(const FiniteStateMachine<T> other)
+  FiniteStateMachine<T>::operator=(FiniteStateMachine<T> other)
 {
-  std::swap(*this, other);
+  std::swap(adjacency_, other.adjacency_);
   return *this;
 }
 
