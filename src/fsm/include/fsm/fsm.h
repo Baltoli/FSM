@@ -58,9 +58,22 @@ public:
    */
   std::shared_ptr<State> AddState(State s);
 
+  /**
+   * Add a new state to the machine.
+   *
+   * This is a convenience method that forwards its arguments to construct a
+   * \ref State.
+   */
   template<class... Args>
   std::shared_ptr<State> AddState(Args&&...);
 
+  /**
+   * Add a number of default-constructed states to the machine.
+   *
+   * This is a convenience method that allows for a number of states to be added
+   * to the machine easily, while retaining a reference to the added states (so
+   * that they can be modified or edges can be added).
+   */
   std::vector<std::shared_ptr<State>> AddStates(size_t n);
 
   /**
@@ -162,6 +175,15 @@ public:
 
   /**
    * Create a new machine that is the cross product of this one with \p other.
+   *
+   * The cross product of machines `A` and `B` draws its states from the set `A
+   * x B`, and has edges `(a_i, b_i) -> (a_j, b_i)` if `A` has an edge `a_i ->
+   * a_j` (similarly for edges in `B`).
+   *
+   * This construction implements a form of inclusive-or on finite state
+   * machines where the transitions from either machine are permitted, and
+   * accepting states are `(a_i, b_i)` where either `a_i` or `b_i` are
+   * accepting.
    */
   FiniteStateMachine<T> CrossProduct(FiniteStateMachine<T> other) const;
 
