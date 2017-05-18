@@ -148,6 +148,11 @@ public:
   std::set<std::shared_ptr<State>> AcceptingStates();
 
   /**
+   * Get all the states in this machine.
+   */
+  std::set<std::shared_ptr<State>> States();
+
+  /**
    * Create a new machine equivalent to this one with no epsilon edges.
    *
    * The resulting machine is behaviourally equivalent to this one, but uses the
@@ -448,6 +453,18 @@ std::set<std::shared_ptr<State>> FiniteStateMachine<T>::AcceptingStates()
     if(adj_list.first->accepting) {
       ret.insert(adj_list.first);
     }
+  }
+
+  return ret;
+}
+
+template<class T>
+std::set<std::shared_ptr<State>> FiniteStateMachine<T>::States()
+{
+  auto ret = std::set<std::shared_ptr<State>>{};
+
+  for(auto&& adj_list : adjacency_) {
+    ret.insert(adj_list.first);
   }
 
   return ret;
