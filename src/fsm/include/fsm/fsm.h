@@ -380,7 +380,7 @@ bool FiniteStateMachine<T>::IsDeterministic() const
       auto edges = std::set<T>{};
       auto unique = true;
       for(const auto& edge : adj_list.second) {
-        if(!edge.Value()) {
+        if(edge.IsEpsilon()) {
           continue;
         }
 
