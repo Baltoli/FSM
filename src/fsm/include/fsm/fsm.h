@@ -193,10 +193,24 @@ public:
   FiniteStateMachine<T> CrossProduct(FiniteStateMachine<T> other) const;
 
   /**
+   * Returns true if this machine accepts the sequence in \p input.
+   */
+  template<class Container>
+  bool AcceptsSequence(Container input);
+
+  /**
    * Returns true if this machine accepts the sequence [begin, end).
    */
   template<class Iterator>
   bool AcceptsSequence(Iterator begin, Iterator end);
+
+  /**
+   * Returns true if this machine accepts the sequence in \p input.
+   *
+   * Uses \p acc as a custom acceptance function (rather than equality).
+   */
+  template<class Container, class E>
+  bool AcceptsSequence(Container input, std::function<bool (E,T)> acc);
 
   /**
    * Returns true if this machine accepts the sequence [begin, end).
@@ -205,26 +219,6 @@ public:
    */
   template<class Iterator, class E>
   bool AcceptsSequence(Iterator begin, Iterator end, std::function<bool (E,T)> acc);
-
-  /**
-   * Generate a transduced output sequence from [begin, end).
-   *
-   * Output values are generated from edge labels and \p output.
-   */
-  template<class Iterator, class O>
-  std::vector<O> TransduceSequence(Iterator begin, Iterator end,
-                                   std::function<O (T)> output);
-
-  /**
-   * Generate a transduced output sequence from [begin, end).
-   *
-   * Output values are generated from edge labels and \p output. This variant
-   * allows for the input sequence type to be different to the edge label type.
-   */
-  template<class Iterator, class E, class O>
-  std::vector<O> TransduceSequence(Iterator begin, Iterator end,
-                                   std::function<bool (E,T)> acc, 
-                                   std::function<O (E,T)> output);
 
   /**
    * Get a DOT formatted debug output representing this machine.
@@ -615,11 +609,25 @@ FiniteStateMachine<T> FiniteStateMachine<T>::CrossProduct(FiniteStateMachine<T> 
 }
 
 template<class T>
+template<class Container>
+bool FiniteStateMachine<T>::AcceptsSequence(Container input)
+{
+  return AcceptsSequence(std::begin(input), std::end(input));
+}
+
+template<class T>
 template<class Iterator>
 bool FiniteStateMachine<T>::AcceptsSequence(Iterator begin, Iterator end)
 {
   using value_type = typename std::iterator_traits<Iterator>::value_type;
   return AcceptsSequence<Iterator, T>(begin, end, std::equal_to<value_type>{});
+}
+
+template<class T>
+template<class Container, class E>
+bool FiniteStateMachine<T>::AcceptsSequence(Container input, std::function<bool (E,T)> acc)
+{
+  return AcceptsSequence(std::begin(input), std::end(input), acc);
 }
 
 template<class T>
@@ -648,52 +656,6 @@ bool FiniteStateMachine<T>::AcceptsSequence(Iterator begin, Iterator end,
   }
 
   return state->accepting;
-}
-
-template<class T>
-template<class Iterator, class O>
-std::vector<O> FiniteStateMachine<T>::TransduceSequence(Iterator begin, Iterator end,
-                                                        std::function<O (T)> output)
-{
-  return TransduceSequence<Iterator, T, O>(begin, end, 
-    [](auto e, auto t) { return e == t; },
-    [output](auto e, auto t) { return output(t); }
-  );
-}
-
-template<class T>
-template<class Iterator, class E, class O>
-std::vector<O> FiniteStateMachine<T>::TransduceSequence(Iterator begin, Iterator end,
-                                                        std::function<bool (E,T)> acc, 
-                                                        std::function<O (E,T)> output)
-{
-  static_assert(std::is_same<typename std::iterator_traits<Iterator>::value_type, E>::value,
-                "Wrong iterator type used in transducer");
-
-  auto fsm = (IsDeterministic() ? *this : Deterministic());
-  auto transduced_sequence = std::vector<O>{};
-
-  auto state = fsm.InitialState();
-  for(auto it = begin; it != end; it++) {
-    auto accepting_edge = std::find_if(fsm.adjacency_[state].begin(), fsm.adjacency_[state].end(),
-      [=](Edge<T> edge) {
-        return edge.Accepts(*it, acc);
-      }
-    );
-
-    if(accepting_edge == fsm.adjacency_[state].end()) {
-      return {};
-    } else {
-      transduced_sequence.push_back(accepting_edge->Transduce(*it, output));
-      state = accepting_edge->End();
-    }
-  }
-
-  if(state->accepting) {
-    return transduced_sequence;
-  } else {
-    return {};
-  }
 }
 
 template<class T>
