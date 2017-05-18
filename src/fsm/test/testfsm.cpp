@@ -44,3 +44,19 @@ TEST_CASE("constructing cross products") {
   REQUIRE(!b.AcceptsSequence(std::begin(mix_seq), std::end(mix_seq)));
   REQUIRE(c.AcceptsSequence(std::begin(mix_seq), std::end(mix_seq)));
 }
+
+TEST_CASE("reversing FSMs") {
+  FiniteStateMachine<int> a;
+  auto as = a.AddStates(4);
+  as[0]->initial = true;
+  as[3]->accepting = true;
+
+  a.AddEdge(as[0], as[1], 0);
+  a.AddEdge(as[0], as[2], 1);
+  a.AddEdge(as[2], as[3], 2);
+  a.AddEdge(as[1], as[3], 2);
+
+  std::cout << a.Relabeled().Dot() << '\n';
+  std::cout << a.Deterministic().Relabeled().Dot() << '\n';
+  std::cout << a.Minimised().Relabeled().Dot() << '\n';
+}

@@ -179,6 +179,16 @@ public:
   FiniteStateMachine<T> Relabeled();
 
   /**
+   * Create a new machine with edges reversed.
+   *
+   * This is a useful thing to have for some uses of FSMs (e.g. Brzozowski's
+   * algorithm).
+   */
+  FiniteStateMachine<T> Reversed();
+
+  FiniteStateMachine<T> Minimised();
+
+  /**
    * Create a new machine that is the cross product of this one with \p other.
    *
    * The cross product of machines `A` and `B` draws its states from the set `A
@@ -606,6 +616,50 @@ FiniteStateMachine<T> FiniteStateMachine<T>::CrossProduct(FiniteStateMachine<T> 
   }
 
   return fsm;
+}
+
+template<class T>
+FiniteStateMachine<T> FiniteStateMachine<T>::Reversed()
+{
+  FiniteStateMachine<T> fsm;
+  auto new_initial = fsm.AddState();
+  new_initial->initial = true;
+
+  std::map<std::shared_ptr<State>, std::shared_ptr<State>> map;
+  for(auto&& state : States()) {
+    map[state] = fsm.AddState(*state);
+
+    if(state->initial) {
+      map[state]->initial = false;
+      map[state]->accepting = true;
+    }
+
+    if(state->accepting) {
+      map[state]->accepting = false;
+      fsm.AddEdge(new_initial, map[state]);
+    }
+  }
+
+  for(auto&& list : adjacency_) {
+    for(auto&& edge : list.second) {
+      if(edge.IsEpsilon()) {
+        fsm.AddEdge(map[edge.End()], map[list.first]);
+      } else {
+        fsm.AddEdge(map[edge.End()], map[list.first], edge.Value());
+      }
+    }
+  }
+
+  return fsm;
+}
+
+template<class T>
+FiniteStateMachine<T> FiniteStateMachine<T>::Minimised()
+{
+  auto rev_n = Reversed();
+  auto rev_d = rev_n.Deterministic();
+  auto min_n = rev_d.Reversed();
+  return min_n.Deterministic();
 }
 
 template<class T>
